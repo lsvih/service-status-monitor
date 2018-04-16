@@ -1,21 +1,15 @@
 import re
 import sqlite3
 import subprocess
+import threading
 import time
 from contextlib import closing
-from urllib.request import urlopen
+from functools import wraps
 
+import requests
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, g, request, jsonify, session, abort
 from flask_cors import CORS
-
-# Configuration
-DATABASE = "monitor.db"
-
-app = Flask(__name__)
-app.config.from_object(__name__)
-app.debug = True
-app.secret_key = "secret?"
-CORS(app)
 
 """
 Server status:
@@ -24,9 +18,22 @@ Server status:
 1  HEALTHY
 
 Server/App state:
-0  On monitor
-1  Stop monitor
+1  On monitor
+0  Stop monitor
 """
+app = Flask(__name__)
+# Configuration
+DATABASE = "monitor.db"
+config = app.config
+config.from_object(__name__)
+config['secret_key'] = "secret?"
+config['SERVER_NAME'] = "127.0.0.1:5006"
+config['threaded'] = True
+config['HTTPS'] = False
+server_base = ['http://', 'https://'][int(config['HTTPS'])] + config['SERVER_NAME']
+CORS(app)
+cron = BackgroundScheduler()
+cron.start()
 
 
 def call_proc(cmd):
@@ -86,25 +93,33 @@ def login():
 
 
 @app.route('/is_login', methods=['GET'])
-def logout():
+def is_login():
     if not session.get('logged_in'):
         return jsonify({'code': 200, 'data': False})
     else:
         return jsonify({'code': 200, 'data': session.get('logged_in')})
 
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('logged_in') is None:
+            return abort(403)
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
 @app.route('/logout', methods=['POST'])
+@login_required
 def logout():
-    if not session.get('logged_in'):
-        return abort(403)
     session.pop('logged_in', None)
     return jsonify({'code': 200, 'data': 'success'})
 
 
 @app.route('/users', methods=['GET'])
+@login_required
 def get_users():
-    if not session.get('logged_in'):
-        return abort(403)
     rs = query_db('select id,username from Users')
     return jsonify({'code': 200, 'data': rs})
 
@@ -121,9 +136,8 @@ def get_servers(server_id=None):
 
 
 @app.route('/servers', methods=['POST'])
+@login_required
 def create_server():
-    if not session.get('logged_in'):
-        return abort(403)
     data = request.get_json()
     name = data.get("name")
     description = data.get("description")
@@ -144,6 +158,14 @@ def create_server():
         return abort(405)
 
 
+@app.route('/servers/<server_id>', methods=['PUT'])
+def update_server_status(server_id):
+    status = int(request.form['status'])
+    rs = query_db('update Servers set status=?,updated_at=? where id=?',
+                  [status, int(time.time()), int(server_id)], one=True, mode='modify')
+    return jsonify({"code": 200, 'data': rs})
+
+
 @app.route('/apps/', methods=['GET'])
 @app.route('/apps/<app_id>', methods=['GET'])
 def get_apps(app_id=None):
@@ -156,9 +178,8 @@ def get_apps(app_id=None):
 
 
 @app.route('/apps', methods=['POST'])
+@login_required
 def create_app():
-    if not session.get('logged_in'):
-        return abort(403)
     data = request.get_json()
     name = data.get("name")
     description = data.get("description")
@@ -181,6 +202,14 @@ def create_app():
         return jsonify({"code": 200, 'data': rs})
     else:
         return abort(405)
+
+
+@app.route('/apps/<app_id>', methods=['PUT'])
+def update_app_status(app_id):
+    status = int(request.form['status'])
+    rs = query_db('update Applications set status=?,updated_at=?  where id=?',
+                  [status, int(time.time()), int(app_id)], one=True, mode='modify')
+    return jsonify({"code": 200, 'data': rs})
 
 
 @app.route('/ping/<host>', methods=['GET'])
@@ -215,13 +244,61 @@ def http_test():
             return jsonify({'code': 200, 'data': 'online'})
         else:
             return jsonify({'code': 200, 'data': 'offline'})
-    except ValueError as e:
-        return jsonify({'code': 400, 'msg': e})
+    except Exception as e:
+        return jsonify({'code': 400, 'msg': str(e)})
 
 
 def http(address):
-    return urlopen(address).code == 200
+    requests.models.PreparedRequest().prepare_url(url=address, params=None)
+    req = None
+    try:
+        req = requests.get(address)
+    except:
+        pass
+    if req:
+        return req.ok
+    else:
+        return False
 
 
-if __name__ == '__main__':
-    app.run()
+def updateServer(_id, host):
+    try:
+        if icmp(host):
+            requests.put(url='%s/servers/%s' % (server_base, _id), data={'status': 1})
+        else:
+            requests.put(url='%s/servers/%s' % (server_base, _id), data={'status': 0})
+    except:
+        requests.put(url='%s/servers/%s' % (server_base, _id), data={'status': -1})
+
+
+def updateApp(_id, address):
+    try:
+        if http(address):
+            requests.put(url='%s/apps/%s' % (server_base, _id), data={'status': 1})
+        else:
+            requests.put(url='%s/apps/%s' % (server_base, _id), data={'status': 0})
+    except:
+        requests.put(url='%s/apps/%s' % (server_base, _id), data={'status': -1})
+
+
+@cron.scheduled_job('interval', seconds=20)
+def check():
+    def _filter(item):
+        if item['state'] == 0:
+            return False
+        if (time.time() - item['updated_at']) / 60 < item['cycle']:
+            return False
+        return True
+
+    server_list = list(filter(_filter, requests.get(server_base + '/servers').json()['data']))
+    app_list = list(filter(_filter, requests.get(server_base + '/apps').json()['data']))
+    jobs = [threading.Thread(target=updateServer, args=(server['id'], server['address'])) for server in server_list] + \
+           [threading.Thread(target=updateApp, args=(app['id'], app['address'])) for app in app_list]
+    for j in jobs:
+        j.start()
+    for j in jobs:
+        j.join()
+
+
+app.run()
+exit()

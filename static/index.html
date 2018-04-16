@@ -1,1 +1,109 @@
-test
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <title>Service Management System</title>
+</head>
+<link href="https://cdn.bootcss.com/bootstrap/4.1.0/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    body {
+        min-height: 100%;
+        padding-top: 4.5rem;
+    }
+
+    .card {
+        margin-bottom: .5rem;
+    }
+
+    .card-header a {
+        color: #000;
+    }
+
+    .server-status {
+        display: inline-block;
+        height: 15px;
+        width: 15px;
+    }
+</style>
+<body>
+<div id="app">
+    <nav class="navbar navbar-expand navbar-dark fixed-top bg-dark">
+        <a class="navbar-brand" href="#">Monitor</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Dashboard</a>
+                </li>
+                <li class="nav-item" v-if="!loginState">
+                    <a class="nav-link" href="#">Login</a>
+                </li>
+                <li class="nav-item" v-if="loginState">
+                    <a class="nav-link" href="#">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <main role="main" class="container" v-show="page == 'dashboard'">
+        <div class="card" v-for="server of serversList">
+            <div class="card-header">
+                <span class="server-status"
+                      v-bind:style="{backgroundColor:['grey', 'red', 'green'][server.status + 1]}"></span>
+                <a class="card-link" data-toggle="collapse" v-bind:href="`#${server.id}`">
+                    {{['Unknown', 'Offline', 'Run'][server.status + 1]}} - {{server.name}}
+                </a>
+            </div>
+            <div v-bind:id="server.id" class="collapse show" v-show="appsOfServer(server.id).length > 0">
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th width="1%">Status</th>
+                            <th>Name</th>
+                            <th>Address</th>
+                            <th>Description</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="app of appsOfServer(server.id)">
+                            <td v-bind:class="['table-secondary','table-danger','table-success'][app.status + 1]">
+                                {{['Unknown', 'Offline', 'Run'][app.status + 1]}}
+                            </td>
+                            <td>{{app.name}}</td>
+                            <td><a v-bind:href="app.address" target="_blank">{{app.address}}</a></td>
+                            <td>{{app.description}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+
+</body>
+<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdn.bootcss.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+<script src="https://cdn.bootcss.com/axios/0.18.0/axios.min.js"></script>
+<script src="https://cdn.bootcss.com/vue/2.5.17-beta.0/vue.min.js"></script>
+<script>
+    vm = new Vue({
+        el: "#app",
+        data: {
+            page: 'dashboard', // dashboard | server_manage | application_manage | login | logout
+            loginState: false,
+            serversList: [],
+            appsList: []
+        },
+        created() {
+            axios.get("/servers").then(res => this.serversList = res.data.data)
+            axios.get("/apps").then(res => this.appsList = res.data.data)
+        },
+        methods: {
+            appsOfServer(serverId) {
+                return this.appsList.filter(e => e.server_id == serverId)
+            }
+        }
+    })
+</script>
+</html>

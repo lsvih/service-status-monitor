@@ -1,2 +1,4 @@
+requests
+apscheduler
 flask
 flask_cors
