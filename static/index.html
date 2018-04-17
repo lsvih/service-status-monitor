@@ -83,7 +83,7 @@
     <div id="login" tabindex="-1" role="dialog" class="modal fade">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form class="form-signin" v-on:submit="login()">
+                <form class="form-signin" v-on:submit="login()" onsubmit="return false;">
                     <div class="text-center mb-4">
                         <h1 class="h3 mb-3 font-weight-normal">Login</h1>
                         <p></p>
@@ -114,7 +114,7 @@
                         <h1 class="h3 mb-3 font-weight-normal">Adding a server</h1>
                         <p></p>
                     </div>
-                    <form class="form-group" v-on:submit="addServer()">
+                    <form class="form-group" v-on:submit="addServer()" onsubmit="return false;">
                         <div class="input-group mb-3">
                             <div class="input-group-prepend">
                                 <span class="input-group-text" id="basic-addon1">Name</span>
@@ -174,7 +174,7 @@
                         <h1 class="h3 mb-3 font-weight-normal">Adding an application</h1>
                         <p></p>
                     </div>
-                    <form class="form-group" v-on:submit="addApp()">
+                    <form class="form-group" v-on:submit="addApp()" onsubmit="return false;">
                         <div class="input-group mb-3">
                             <div class="input-group-prepend">
                                 <span class="input-group-text" id="basic-addon5">Name</span>
