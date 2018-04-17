@@ -11,22 +11,22 @@ vm = new Vue({
     created() {
         this.getServers()
         this.getApps()
-        axios.get("/is_login").then(res => {
+        axios.get("/is_login/").then(res => {
             if (res.data.data) this.loginState = true
         })
     },
     methods: {
         getServers() {
-            axios.get("/servers").then(res => this.serversList = res.data.data)
+            axios.get("/servers/").then(res => this.serversList = res.data.data)
         },
         getApps() {
-            axios.get("/apps").then(res => this.appsList = res.data.data)
+            axios.get("/apps/").then(res => this.appsList = res.data.data)
         },
         appsOfServer(serverId) {
             return this.appsList.filter(e => e.server_id == serverId)
         },
         login() {
-            axios.post("/login",
+            axios.post("/login/",
                 {username: $('#inputName').val(), password: $('#inputPassword').val()})
                 .then(res => {
                     if (res.data.data === 'success') {
@@ -45,7 +45,7 @@ vm = new Vue({
             }
         },
         addServer() {
-            axios.post("/servers",
+            axios.post("/servers/",
                 {
                     name: $('#add-server-name').val(),
                     description: $('#add-server-des').val(),
@@ -89,7 +89,7 @@ vm = new Vue({
             this._serverId = server_id
         },
         addApp() {
-            axios.post("/apps",
+            axios.post("/apps/",
                 {
                     name: $('#add-app-name').val(),
                     address: `http://${$('#add-app-address').val()}`,
