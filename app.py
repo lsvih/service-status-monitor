@@ -81,7 +81,7 @@ def index():
 
 
 # API
-@app.route('/login', methods=['POST'])
+@app.route('/login/', methods=['POST'])
 def login():
     data = request.get_json()
     if data is None:
@@ -94,7 +94,7 @@ def login():
     return abort(403)
 
 
-@app.route('/is_login', methods=['GET'])
+@app.route('/is_login/', methods=['GET'])
 def is_login():
     if not session.get('logged_in'):
         return jsonify({'code': 200, 'data': False})
@@ -112,14 +112,14 @@ def login_required(f):
     return decorated_function
 
 
-@app.route('/logout', methods=['POST'])
+@app.route('/logout/', methods=['POST'])
 @login_required
 def logout():
     session.pop('logged_in', None)
     return jsonify({'code': 200, 'data': 'success'})
 
 
-@app.route('/users', methods=['GET'])
+@app.route('/users/', methods=['GET'])
 @login_required
 def get_users():
     rs = query_db('select id,username from Users')
@@ -137,7 +137,7 @@ def get_servers(server_id=None):
         return jsonify({"code": 200, 'data': rs})
 
 
-@app.route('/servers', methods=['POST'])
+@app.route('/servers/', methods=['POST'])
 @login_required
 def create_server():
     data = request.get_json()
@@ -187,7 +187,7 @@ def get_apps(app_id=None):
         return jsonify({"code": 200, 'data': rs})
 
 
-@app.route('/apps', methods=['POST'])
+@app.route('/apps/', methods=['POST'])
 @login_required
 def create_app():
     data = request.get_json()
@@ -249,7 +249,7 @@ def icmp(host):
     return True
 
 
-@app.route('/req', methods=['POST'])
+@app.route('/req/', methods=['POST'])
 def http_test():
     data = request.get_json()
     address = data.get("address")
