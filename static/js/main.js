@@ -41,7 +41,7 @@ vm = new Vue({
         },
         logout() {
             if (confirm("Confirm logout?")) {
-                axios.post("/logout").then(res => this.loginState = false)
+                axios.post("/logout/").then(res => this.loginState = false)
             }
         },
         addServer() {
