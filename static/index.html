@@ -3,27 +3,8 @@
     <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
     <title>Service Management System</title>
 </head>
-<link href="https://cdn.bootcss.com/bootstrap/4.1.0/css/bootstrap.min.css" rel="stylesheet">
-<style>
-    body {
-        min-height: 100%;
-        padding-top: 4.5rem;
-    }
-
-    .card {
-        margin-bottom: .5rem;
-    }
-
-    .card-header a {
-        color: #000;
-    }
-
-    .server-status {
-        display: inline-block;
-        height: 15px;
-        width: 15px;
-    }
-</style>
+<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+<link href="/static/css/main.css" rel="stylesheet">
 <body>
 <div id="app">
     <nav class="navbar navbar-expand navbar-dark fixed-top bg-dark">
@@ -34,12 +15,15 @@
                     <a class="nav-link" href="#">Dashboard</a>
                 </li>
                 <li class="nav-item" v-if="!loginState">
-                    <a class="nav-link" href="#">Login</a>
+                    <a class="nav-link" href="#" data-toggle="modal" data-target="#login">Login</a>
                 </li>
                 <li class="nav-item" v-if="loginState">
-                    <a class="nav-link" href="#">Logout</a>
+                    <a class="nav-link" href="#" v-on:click="logout()">Logout</a>
                 </li>
             </ul>
+            <button type="button" class="btn btn-primary btn-sm float-right" v-if="loginState" data-toggle="modal"
+                    data-target="#add-server">Add Server
+            </button>
         </div>
     </nav>
 
@@ -51,6 +35,15 @@
                 <a class="card-link" data-toggle="collapse" v-bind:href="`#${server.id}`">
                     {{['Unknown', 'Offline', 'Run'][server.status + 1]}} - {{server.name}}
                 </a>
+                <div class="btn-group btn-group-sm float-right" role="group" aria-label="panel">
+                    <button type="button" class="btn btn-secondary btn-sm float-right" v-if="loginState"
+                            v-on:click="openAddAppPanel(server.id)">Add
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm float-right" v-if="loginState"
+                            v-on:click="deleteServer(server.id)">Delete
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm float-right">Info</button>
+                </div>
             </div>
             <div v-bind:id="server.id" class="collapse show" v-show="appsOfServer(server.id).length > 0">
                 <div class="card-body">
@@ -61,6 +54,7 @@
                             <th>Name</th>
                             <th>Address</th>
                             <th>Description</th>
+                            <th width="1%"></th>
                         </tr>
                         </thead>
                         <tbody>
@@ -71,6 +65,14 @@
                             <td>{{app.name}}</td>
                             <td><a v-bind:href="app.address" target="_blank">{{app.address}}</a></td>
                             <td>{{app.description}}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="panel">
+                                    <button type="button" class="btn btn-secondary btn-sm float-right"
+                                            v-if="loginState" v-on:click="deleteApp(app.id)">Delete
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm float-right">Info</button>
+                                </div>
+                            </td>
                         </tr>
                         </tbody>
                     </table>
@@ -78,32 +80,171 @@
             </div>
         </div>
     </main>
+    <div id="login" tabindex="-1" role="dialog" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form class="form-signin" v-on:submit="login()">
+                    <div class="text-center mb-4">
+                        <h1 class="h3 mb-3 font-weight-normal">Login</h1>
+                        <p></p>
+                    </div>
+                    <div class="form-label-group">
+                        <input type="text" id="inputName" class="form-control" placeholder="Username"
+                               required autofocus>
+                        <label for="inputName">Username</label>
+                    </div>
+
+                    <div class="form-label-group">
+                        <input type="password" id="inputPassword" class="form-control" placeholder="Password"
+                               required>
+                        <label for="inputPassword">Password</label>
+                    </div>
+                    <button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="add-server" tabindex="-1" role="dialog" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <h1 class="h3 mb-3 font-weight-normal">Adding a server</h1>
+                        <p></p>
+                    </div>
+                    <form class="form-group" v-on:submit="addServer()">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon1">Name</span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Name" aria-label="Name"
+                                   aria-describedby="basic-addon1" required id="add-server-name">
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon2">IP Address</span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="IP" aria-label="IP"
+                                   aria-describedby="basic-addon2" id="add-server-ip">
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon3">Testing cycle(min)</span>
+                            </div>
+                            <select class="custom-select" id="add-server-cycle">
+                                <option value="1" selected>1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                            </select>
+                        </div>
+
+                        <div class="form-label-group">
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="Description">Description</span>
+                                </div>
+                                <textarea class="form-control" aria-label="Description" id="add-server-des"></textarea>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="add-server-check">
+                                <label class="form-check-label" for="add-server-check">Start monitor</label>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-lg btn-primary btn-block" type="submit">Add</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="add-app" tabindex="-1" role="dialog" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <h1 class="h3 mb-3 font-weight-normal">Adding an application</h1>
+                        <p></p>
+                    </div>
+                    <form class="form-group" v-on:submit="addApp()">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon5">Name</span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Name" aria-label="Name"
+                                   aria-describedby="basic-addon1" required id="add-app-name">
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon10">http://</span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Address" aria-label="Address"
+                                   aria-describedby="basic-addon10" required id="add-app-address">
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon9">On server</span>
+                            </div>
+                            <input type="text" class="form-control" aria-label="server-ip"
+                                   aria-describedby="basic-addon9" id="add-app-server" readonly>
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon6">Project path</span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Project path on server"
+                                   aria-label="Path"
+                                   aria-describedby="basic-addon2" id="add-app-path" required>
+                        </div>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon7">Testing cycle(min)</span>
+                            </div>
+                            <select class="custom-select" id="add-app-cycle">
+                                <option value="1" selected>1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                            </select>
+                        </div>
+
+                        <div class="form-label-group">
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="Description2">Description</span>
+                                </div>
+                                <textarea class="form-control" aria-label="Description2" id="add-app-des"></textarea>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="add-app-check">
+                                <label class="form-check-label" for="add-app-check">Start monitor</label>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-lg btn-primary btn-block" type="submit">Add</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
-
 </body>
-<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
-<script src="https://cdn.bootcss.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
-<script src="https://cdn.bootcss.com/axios/0.18.0/axios.min.js"></script>
-<script src="https://cdn.bootcss.com/vue/2.5.17-beta.0/vue.min.js"></script>
-<script>
-    vm = new Vue({
-        el: "#app",
-        data: {
-            page: 'dashboard', // dashboard | server_manage | application_manage | login | logout
-            loginState: false,
-            serversList: [],
-            appsList: []
-        },
-        created() {
-            axios.get("/servers").then(res => this.serversList = res.data.data)
-            axios.get("/apps").then(res => this.appsList = res.data.data)
-        },
-        methods: {
-            appsOfServer(serverId) {
-                return this.appsList.filter(e => e.server_id == serverId)
-            }
-        }
-    })
-</script>
+<script src="/static/js/jquery.min.js"></script>
+<script src="/static/js/bootstrap.min.js"></script>
+<script src="/static/js/vue.min.js"></script>
+<script src="/static/js/axios.min.js"></script>
+<script src="/static/js/main.js"></script>
 </html>

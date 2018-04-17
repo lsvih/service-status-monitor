@@ -9,7 +9,6 @@ from functools import wraps
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, g, request, jsonify, session, abort
-from flask_cors import CORS
 
 """
 Server status:
@@ -26,12 +25,13 @@ app = Flask(__name__)
 DATABASE = "monitor.db"
 config = app.config
 config.from_object(__name__)
-config['secret_key'] = "secret?"
+app.secret_key = "secret?"
 config['SERVER_NAME'] = "127.0.0.1:5006"
 config['threaded'] = True
 config['HTTPS'] = False
+config['SESSION_COOKIE_DOMAIN'] = config['SERVER_NAME']
+config['SESSION_COOKIE_PATH'] = '*'
 server_base = ['http://', 'https://'][int(config['HTTPS'])] + config['SERVER_NAME']
-CORS(app)
 cron = BackgroundScheduler()
 cron.start()
 
@@ -69,6 +69,8 @@ def before_request():
 @app.after_request
 def after_request(response):
     g.db.close()
+    response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
     return response
 
 
@@ -143,6 +145,7 @@ def create_server():
     description = data.get("description")
     address = data.get("address")
     cycle = int(data.get("cycle"))
+    state = int(data.get("state"))
     if data is not None and name is not None and address is not None and cycle is not None:
         if description is None:
             description = ""
@@ -151,7 +154,7 @@ def create_server():
             '(name,description,address,created_at,updated_at,cycle,created_by,status,state)'
             'values(?,?,?,?,?,?,?,?,?)',
             [name, description, address, int(time.time()), int(time.time()), cycle, session.get('logged_in')['id'], -1,
-             0],
+             state],
             mode='modify')
         return jsonify({"code": 200, 'data': rs})
     else:
@@ -163,6 +166,13 @@ def update_server_status(server_id):
     status = int(request.form['status'])
     rs = query_db('update Servers set status=?,updated_at=? where id=?',
                   [status, int(time.time()), int(server_id)], one=True, mode='modify')
+    return jsonify({"code": 200, 'data': rs})
+
+
+@app.route('/servers/<server_id>', methods=['DELETE'])
+def delete_server(server_id):
+    rs = query_db('delete from Servers where id=?',
+                  [int(server_id)], one=True, mode='modify')
     return jsonify({"code": 200, 'data': rs})
 
 
@@ -187,6 +197,7 @@ def create_app():
     server_id = int(data.get("server_id"))
     address = data.get("address")
     cycle = int(data.get("cycle"))
+    state = int(data.get("state"))
     if data is not None and name is not None and address is not None and cycle is not None \
             and project_path is not None and server_id is not None:
         if description is None:
@@ -194,11 +205,9 @@ def create_app():
         rs = query_db(
             'insert into Applications '
             '(name,description,project_path,server_id,address,created_at,updated_at,cycle,created_by,status,state)'
-            'values(?,?,?,?,?,?,?,?,?)',
+            'values(?,?,?,?,?,?,?,?,?,?,?)',
             [name, description, project_path, server_id, address, int(time.time()), int(time.time()), cycle,
-             session.get('logged_in')['id'], -1,
-             0],
-            mode='modify')
+             session.get('logged_in')['id'], -1, state], mode='modify')
         return jsonify({"code": 200, 'data': rs})
     else:
         return abort(405)
@@ -209,6 +218,13 @@ def update_app_status(app_id):
     status = int(request.form['status'])
     rs = query_db('update Applications set status=?,updated_at=?  where id=?',
                   [status, int(time.time()), int(app_id)], one=True, mode='modify')
+    return jsonify({"code": 200, 'data': rs})
+
+
+@app.route('/apps/<app_id>', methods=['DELETE'])
+def delete_app(app_id):
+    rs = query_db('delete from Applications where id=?',
+                  [int(app_id)], one=True, mode='modify')
     return jsonify({"code": 200, 'data': rs})
 
 
