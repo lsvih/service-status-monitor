@@ -53,6 +53,7 @@
                             <th width="1%">Status</th>
                             <th>Name</th>
                             <th>Address</th>
+                            <th>Path</th>
                             <th>Description</th>
                             <th width="1%"></th>
                         </tr>
@@ -64,6 +65,7 @@
                             </td>
                             <td>{{app.name}}</td>
                             <td><a v-bind:href="app.address" target="_blank">{{app.address}}</a></td>
+                            <td><code>{{app.project_path}}</code></td>
                             <td>{{app.description}}</td>
                             <td>
                                 <div class="btn-group btn-group-sm" role="group" aria-label="panel">

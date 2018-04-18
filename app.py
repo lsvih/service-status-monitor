@@ -297,7 +297,7 @@ def updateApp(_id, address):
         requests.put(url='%s/apps/%s' % (server_base, _id), data={'status': -1})
 
 
-@cron.scheduled_job('interval', seconds=20)
+@cron.scheduled_job('interval', seconds=20, max_instances=30)
 def check():
     def _filter(item):
         if item['state'] == 0:
