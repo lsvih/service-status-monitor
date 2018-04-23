@@ -30,7 +30,7 @@ config['SERVER_NAME'] = "127.0.0.1:5006"
 config['threaded'] = True
 config['HTTPS'] = False
 config['SESSION_COOKIE_DOMAIN'] = config['SERVER_NAME']
-config['SESSION_COOKIE_PATH'] = '*'
+config['SESSION_COOKIE_PATH'] = '/'
 server_base = ['http://', 'https://'][int(config['HTTPS'])] + config['SERVER_NAME']
 cron = BackgroundScheduler()
 cron.start()
