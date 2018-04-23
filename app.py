@@ -170,6 +170,7 @@ def update_server_status(server_id):
 
 
 @app.route('/servers/<server_id>', methods=['DELETE'])
+@login_required
 def delete_server(server_id):
     rs = query_db('delete from Servers where id=?',
                   [int(server_id)], one=True, mode='modify')
@@ -222,6 +223,7 @@ def update_app_status(app_id):
 
 
 @app.route('/apps/<app_id>', methods=['DELETE'])
+@login_required
 def delete_app(app_id):
     rs = query_db('delete from Applications where id=?',
                   [int(app_id)], one=True, mode='modify')
