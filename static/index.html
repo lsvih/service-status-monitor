@@ -21,8 +21,8 @@
                     <a class="nav-link" href="#" v-on:click="logout()">Logout</a>
                 </li>
             </ul>
-            <button type="button" class="btn btn-primary btn-sm float-right" v-if="loginState" data-toggle="modal"
-                    data-target="#add-server">Add Server
+            <button type="button" class="btn btn-primary btn-sm float-right" v-if="loginState"
+                    v-on:click="openAddServerPanel()">Add Server
             </button>
         </div>
     </nav>
@@ -38,6 +38,9 @@
                 <div class="btn-group btn-group-sm float-right" role="group" aria-label="panel">
                     <button type="button" class="btn btn-secondary btn-sm float-right" v-if="loginState"
                             v-on:click="openAddAppPanel(server.id)">Add
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm float-right" v-if="loginState"
+                            v-on:click="openEditServerPanel(server.id)">Edit
                     </button>
                     <button type="button" class="btn btn-secondary btn-sm float-right" v-if="loginState"
                             v-on:click="deleteServer(server.id)">Delete
@@ -114,7 +117,7 @@
                         <h1 class="h3 mb-3 font-weight-normal">Adding a server</h1>
                         <p></p>
                     </div>
-                    <form class="form-group" v-on:submit="addServer()" onsubmit="return false;">
+                    <form class="form-group" v-on:submit="optServer()" onsubmit="return false;">
                         <div class="input-group mb-3">
                             <div class="input-group-prepend">
                                 <span class="input-group-text" id="basic-addon1">Name</span>
@@ -157,8 +160,12 @@
                                 <label class="form-check-label" for="add-server-check">Start monitor</label>
                             </div>
                         </div>
-
-                        <button class="btn btn-lg btn-primary btn-block" type="submit">Add</button>
+                        <button class="btn btn-lg btn-primary btn-block" type="submit" v-if="opt === 'editServer'">
+                            Edit
+                        </button>
+                        <button class="btn btn-lg btn-primary btn-block" type="submit" v-if="opt === 'addServer'">
+                            Add
+                        </button>
                     </form>
                 </div>
             </div>

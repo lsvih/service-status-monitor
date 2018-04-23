@@ -161,6 +161,27 @@ def create_server():
         return abort(405)
 
 
+@app.route('/servers/', methods=['PUT'])
+@login_required
+def update_server():
+    data = request.get_json()
+    id = data.get("id")
+    name = data.get("name")
+    description = data.get("description")
+    address = data.get("address")
+    cycle = int(data.get("cycle"))
+    state = int(data.get("state"))
+    if id is not None and data is not None and name is not None and address is not None and cycle is not None:
+        if description is None:
+            description = ""
+        rs = query_db(
+            'update Servers set name=?,description=?,address=?,updated_at=?,cycle=?,state=? where id=?',
+            [name, description, address, int(time.time()), cycle, state, int(id)], mode='modify')
+        return jsonify({"code": 200, 'data': rs})
+    else:
+        return abort(405)
+
+
 @app.route('/servers/<server_id>', methods=['PUT'])
 def update_server_status(server_id):
     status = int(request.form['status'])

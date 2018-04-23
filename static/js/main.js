@@ -6,7 +6,8 @@ vm = new Vue({
         loginState: false,
         serversList: [],
         appsList: [],
-        _serverId: -1
+        _serverId: -1,
+        opt: ''
     },
     created() {
         this.getServers()
@@ -44,23 +45,43 @@ vm = new Vue({
                 axios.post("/logout/").then(res => this.loginState = false)
             }
         },
-        addServer() {
-            axios.post("/servers/",
-                {
-                    name: $('#add-server-name').val(),
-                    description: $('#add-server-des').val(),
-                    address: $('#add-server-ip').val(),
-                    cycle: $('#add-server-cycle').val(),
-                    state: Number($('#add-server-check')[0].checked)
-                })
-                .then(res => {
-                    $('#add-server-name').val("")
-                    $('#add-server-des').val("")
-                    $('#add-server-ip').val("")
-                    $('#add-server-cycle').val("1")
-                    this.getServers()
-                    $('#add-server').modal('hide')
-                }).catch(res => alert("Add failed"))
+        optServer() {
+            if (this.opt === 'addServer') {
+                axios.post("/servers/",
+                    {
+                        name: $('#add-server-name').val(),
+                        description: $('#add-server-des').val(),
+                        address: $('#add-server-ip').val(),
+                        cycle: $('#add-server-cycle').val(),
+                        state: Number($('#add-server-check')[0].checked)
+                    })
+                    .then(res => {
+                        $('#add-server-name').val("")
+                        $('#add-server-des').val("")
+                        $('#add-server-ip').val("")
+                        $('#add-server-cycle').val("1")
+                        this.getServers()
+                        $('#add-server').modal('hide')
+                    }).catch(res => alert("Add failed"))
+            } else if (this.opt === 'editServer') {
+                axios.put(`/servers/`,
+                    {
+                        id: this._serverId,
+                        name: $('#add-server-name').val(),
+                        description: $('#add-server-des').val(),
+                        address: $('#add-server-ip').val(),
+                        cycle: $('#add-server-cycle').val(),
+                        state: Number($('#add-server-check')[0].checked)
+                    })
+                    .then(res => {
+                        $('#add-server-name').val("")
+                        $('#add-server-des').val("")
+                        $('#add-server-ip').val("")
+                        $('#add-server-cycle').val("1")
+                        this.getServers()
+                        $('#add-server').modal('hide')
+                    }).catch(res => alert("Add failed"))
+            }
             return false;
         },
         deleteServer(id) {
@@ -110,6 +131,26 @@ vm = new Vue({
                     $('#add-app').modal('hide')
                 }).catch(res => alert("Add failed"))
             return false;
+        },
+        openEditServerPanel(server_id) {
+            this.opt = 'editServer'
+            $('#add-server').modal('show')
+            let server = this.serversList.filter(e => e.id === server_id)[0]
+            $('#add-server-name').val(server.name)
+            $('#add-server-des').val(server.description)
+            $('#add-server-ip').val(server.address)
+            $('#add-server-cycle').val(server.cycle)
+            $('#add-server-check')[0].checked = server.state === 1
+            this._serverId = server_id
+        },
+        openAddServerPanel() {
+            this.opt = 'addServer'
+            $('#add-server').modal('show')
+            $('#add-server-name').val("")
+            $('#add-server-des').val("")
+            $('#add-server-ip').val("")
+            $('#add-server-cycle').val(1)
+            $('#add-server-check')[0].checked = false
         }
     }
 })
