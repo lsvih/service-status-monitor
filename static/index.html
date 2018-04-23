@@ -73,6 +73,9 @@
                                     <button type="button" class="btn btn-secondary btn-sm float-right"
                                             v-if="loginState" v-on:click="deleteApp(app.id)">Delete
                                     </button>
+                                    <button type="button" class="btn btn-secondary btn-sm float-right"
+                                            v-if="loginState" v-on:click="openEditAppPanel(app.id)">Edit
+                                    </button>
                                     <button type="button" class="btn btn-secondary btn-sm float-right">Info</button>
                                 </div>
                             </td>
@@ -181,7 +184,7 @@
                         <h1 class="h3 mb-3 font-weight-normal">Adding an application</h1>
                         <p></p>
                     </div>
-                    <form class="form-group" v-on:submit="addApp()" onsubmit="return false;">
+                    <form class="form-group" v-on:submit="optApp()" onsubmit="return false;">
                         <div class="input-group mb-3">
                             <div class="input-group-prepend">
                                 <span class="input-group-text" id="basic-addon5">Name</span>
@@ -240,8 +243,10 @@
                                 <label class="form-check-label" for="add-app-check">Start monitor</label>
                             </div>
                         </div>
-
-                        <button class="btn btn-lg btn-primary btn-block" type="submit">Add</button>
+                        <button class="btn btn-lg btn-primary btn-block" type="submit" v-if="opt === 'editApp'">Edit
+                        </button>
+                        <button class="btn btn-lg btn-primary btn-block" type="submit" v-if="opt === 'addApp'">Add
+                        </button>
                     </form>
                 </div>
             </div>

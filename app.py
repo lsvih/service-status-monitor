@@ -165,18 +165,18 @@ def create_server():
 @login_required
 def update_server():
     data = request.get_json()
-    id = data.get("id")
+    server_id = data.get("id")
     name = data.get("name")
     description = data.get("description")
     address = data.get("address")
     cycle = int(data.get("cycle"))
     state = int(data.get("state"))
-    if id is not None and data is not None and name is not None and address is not None and cycle is not None:
+    if server_id is not None and data is not None and name is not None and address is not None and cycle is not None:
         if description is None:
             description = ""
         rs = query_db(
             'update Servers set name=?,description=?,address=?,updated_at=?,cycle=?,state=? where id=?',
-            [name, description, address, int(time.time()), cycle, state, int(id)], mode='modify')
+            [name, description, address, int(time.time()), cycle, state, int(server_id)], mode='modify')
         return jsonify({"code": 200, 'data': rs})
     else:
         return abort(405)
@@ -230,6 +230,29 @@ def create_app():
             'values(?,?,?,?,?,?,?,?,?,?,?)',
             [name, description, project_path, server_id, address, int(time.time()), int(time.time()), cycle,
              session.get('logged_in')['id'], -1, state], mode='modify')
+        return jsonify({"code": 200, 'data': rs})
+    else:
+        return abort(405)
+
+
+@app.route('/apps/', methods=['PUT'])
+@login_required
+def update_app():
+    data = request.get_json()
+    app_id = data.get("id")
+    name = data.get("name")
+    description = data.get("description")
+    project_path = data.get("project_path")
+    address = data.get("address")
+    cycle = int(data.get("cycle"))
+    state = int(data.get("state"))
+    if data is not None and name is not None and address is not None and cycle is not None \
+            and project_path is not None:
+        if description is None:
+            description = ""
+        rs = query_db(
+            'update Applications set name=?,description=?,project_path=?,address=?,updated_at=?,cycle=?,state=? where id=?',
+            [name, description, project_path, address, int(time.time()), cycle, state, int(app_id)], mode='modify')
         return jsonify({"code": 200, 'data': rs})
     else:
         return abort(405)

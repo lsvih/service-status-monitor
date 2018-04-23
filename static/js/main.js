@@ -7,6 +7,7 @@ vm = new Vue({
         serversList: [],
         appsList: [],
         _serverId: -1,
+        _appId: -1,
         opt: ''
     },
     created() {
@@ -80,7 +81,7 @@ vm = new Vue({
                         $('#add-server-cycle').val("1")
                         this.getServers()
                         $('#add-server').modal('hide')
-                    }).catch(res => alert("Add failed"))
+                    }).catch(res => alert("Edit failed"))
             }
             return false;
         },
@@ -105,31 +106,74 @@ vm = new Vue({
             }
         },
         openAddAppPanel(server_id) {
-            $('#add-app').modal('show')
+            this.opt = 'addApp'
+            $('#add-app-name').val('')
+            $('#add-app-address').val('')
+            $('#add-app-des').val('')
+            $('#add-app-path').val('')
+            $('#add-app-cycle').val(1)
+            $('#add-app-check')[0].checked = false
             $('#add-app-server').val(this.serversList.filter(e => e.id === server_id)[0].address)
+            $('#add-app').modal('show')
             this._serverId = server_id
         },
-        addApp() {
-            axios.post("/apps/",
-                {
-                    name: $('#add-app-name').val(),
-                    address: `http://${$('#add-app-address').val()}`,
-                    description: $('#add-app-des').val(),
-                    project_path: $('#add-app-path').val(),
-                    server_id: this._serverId,
-                    cycle: $('#add-app-cycle').val(),
-                    state: Number($('#add-app-check')[0].checked)
-                })
-                .then(res => {
-                    $('#add-app-name').val("")
-                    $('#add-app-des').val("")
-                    $('#add-app-address').val("")
-                    $('#add-app-path').val("")
-                    $('#add-app-cycle').val("1")
-                    this.getApps()
-                    this._serverId = -1
-                    $('#add-app').modal('hide')
-                }).catch(res => alert("Add failed"))
+        openEditAppPanel(app_id) {
+            this.opt = 'editApp'
+            let app = this.appsList.filter(e => e.id === app_id)[0]
+            $('#add-app-name').val(app.name)
+            $('#add-app-address').val(app.address.replace('http://', ''))
+            $('#add-app-des').val(app.description)
+            $('#add-app-path').val(app.project_path)
+            $('#add-app-cycle').val(app.cycle)
+            $('#add-app-check')[0].checked = app.state === 1
+            $('#add-app-server').val(this.serversList.filter(e => e.id === app.server_id)[0].address)
+            $('#add-app').modal('show')
+            this._appId = app_id
+        },
+        optApp() {
+            if (this.opt === 'addApp') {
+                axios.post("/apps/",
+                    {
+                        name: $('#add-app-name').val(),
+                        address: `http://${$('#add-app-address').val()}`,
+                        description: $('#add-app-des').val(),
+                        project_path: $('#add-app-path').val(),
+                        server_id: this._serverId,
+                        cycle: $('#add-app-cycle').val(),
+                        state: Number($('#add-app-check')[0].checked)
+                    })
+                    .then(res => {
+                        $('#add-app-name').val("")
+                        $('#add-app-des').val("")
+                        $('#add-app-address').val("")
+                        $('#add-app-path').val("")
+                        $('#add-app-cycle').val("1")
+                        this.getApps()
+                        this._serverId = -1
+                        $('#add-app').modal('hide')
+                    }).catch(res => alert("Add failed"))
+            } else if (this.opt === 'editApp') {
+                axios.put("/apps/",
+                    {
+                        id: this._appId,
+                        name: $('#add-app-name').val(),
+                        address: `http://${$('#add-app-address').val()}`,
+                        description: $('#add-app-des').val(),
+                        project_path: $('#add-app-path').val(),
+                        cycle: $('#add-app-cycle').val(),
+                        state: Number($('#add-app-check')[0].checked)
+                    })
+                    .then(res => {
+                        $('#add-app-name').val("")
+                        $('#add-app-des').val("")
+                        $('#add-app-address').val("")
+                        $('#add-app-path').val("")
+                        $('#add-app-cycle').val("1")
+                        this.getApps()
+                        this._appId = -1
+                        $('#add-app').modal('hide')
+                    }).catch(res => alert("Edit failed"))
+            }
             return false;
         },
         openEditServerPanel(server_id) {
@@ -151,6 +195,6 @@ vm = new Vue({
             $('#add-server-ip').val("")
             $('#add-server-cycle').val(1)
             $('#add-server-check')[0].checked = false
-        }
+        },
     }
 })
