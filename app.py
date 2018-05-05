@@ -179,6 +179,7 @@ def update_server():
         rs = query_db(
             'update Servers set name=?,description=?,address=?,updated_at=?,cycle=?,state=? where id=?',
             [name, description, address, int(time.time()), cycle, state, int(server_id)], mode='modify')
+        updateServer(server_id, address)
         return jsonify({"code": 200, 'data': rs})
     else:
         return abort(405)
@@ -248,6 +249,7 @@ def update_app():
         rs = query_db(
             'update Applications set name=?,description=?,project_path=?,address=?,updated_at=?,cycle=?,state=? where id=?',
             [name, description, project_path, address, int(time.time()), cycle, state, int(app_id)], mode='modify')
+        updateApp(app_id, address)
         return jsonify({"code": 200, 'data': rs})
     else:
         return abort(405)
