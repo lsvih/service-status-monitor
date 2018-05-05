@@ -56,6 +56,7 @@ def query_db(query, args=(), one=False, mode='query'):
     cur = g.db.execute(query, args)
     if mode == 'modify':
         g.db.commit()
+        return cur.lastrowid
     rv = [dict((cur.description[idx][0], value)
                for idx, value in enumerate(row)) for row in cur.fetchall()]
     return (rv[0] if rv else None) if one else rv
@@ -156,6 +157,7 @@ def create_server():
             [name, description, address, int(time.time()), int(time.time()), cycle, session.get('logged_in')['id'], -1,
              state],
             mode='modify')
+        updateServer(rs, address)
         return jsonify({"code": 200, 'data': rs})
     else:
         return abort(405)
@@ -180,14 +182,6 @@ def update_server():
         return jsonify({"code": 200, 'data': rs})
     else:
         return abort(405)
-
-
-@app.route('/servers/<server_id>', methods=['PUT'])
-def update_server_status(server_id):
-    status = int(request.form['status'])
-    rs = query_db('update Servers set status=?,updated_at=? where id=?',
-                  [status, int(time.time()), int(server_id)], one=True, mode='modify')
-    return jsonify({"code": 200, 'data': rs})
 
 
 @app.route('/servers/<server_id>', methods=['DELETE'])
@@ -230,6 +224,7 @@ def create_app():
             'values(?,?,?,?,?,?,?,?,?,?,?)',
             [name, description, project_path, server_id, address, int(time.time()), int(time.time()), cycle,
              session.get('logged_in')['id'], -1, state], mode='modify')
+        updateApp(rs, address)
         return jsonify({"code": 200, 'data': rs})
     else:
         return abort(405)
@@ -256,14 +251,6 @@ def update_app():
         return jsonify({"code": 200, 'data': rs})
     else:
         return abort(405)
-
-
-@app.route('/apps/<app_id>', methods=['PUT'])
-def update_app_status(app_id):
-    status = int(request.form['status'])
-    rs = query_db('update Applications set status=?,updated_at=?  where id=?',
-                  [status, int(time.time()), int(app_id)], one=True, mode='modify')
-    return jsonify({"code": 200, 'data': rs})
 
 
 @app.route('/apps/<app_id>', methods=['DELETE'])
@@ -324,23 +311,33 @@ def http(address):
 
 
 def updateServer(_id, host):
-    try:
-        if icmp(host):
-            requests.put(url='%s/servers/%s' % (server_base, _id), data={'status': 1})
-        else:
-            requests.put(url='%s/servers/%s' % (server_base, _id), data={'status': 0})
-    except:
-        requests.put(url='%s/servers/%s' % (server_base, _id), data={'status': -1})
+    with app.app_context():
+        before_request()
+        try:
+            if icmp(host):
+                query_db('update Servers set status=?,updated_at=? where id=?',
+                         [1, int(time.time()), _id], one=True, mode='modify')
+            else:
+                query_db('update Servers set status=?,updated_at=? where id=?',
+                         [0, int(time.time()), _id], one=True, mode='modify')
+        except:
+            query_db('update Servers set status=?,updated_at=? where id=?',
+                     [-1, int(time.time()), _id], one=True, mode='modify')
 
 
 def updateApp(_id, address):
-    try:
-        if http(address):
-            requests.put(url='%s/apps/%s' % (server_base, _id), data={'status': 1})
-        else:
-            requests.put(url='%s/apps/%s' % (server_base, _id), data={'status': 0})
-    except:
-        requests.put(url='%s/apps/%s' % (server_base, _id), data={'status': -1})
+    with app.app_context():
+        before_request()
+        try:
+            if http(address):
+                query_db('update Applications set status=?,updated_at=?  where id=?',
+                         [1, int(time.time()), _id], one=True, mode='modify')
+            else:
+                query_db('update Applications set status=?,updated_at=?  where id=?',
+                         [0, int(time.time()), _id], one=True, mode='modify')
+        except:
+            query_db('update Applications set status=?,updated_at=?  where id=?',
+                     [-1, int(time.time()), _id], one=True, mode='modify')
 
 
 @cron.scheduled_job('interval', seconds=20, max_instances=30)
