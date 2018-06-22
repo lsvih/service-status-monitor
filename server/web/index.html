@@ -3,8 +3,8 @@
     <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
     <title>Service Management System</title>
 </head>
-<link href="/static/css/bootstrap.min.css" rel="stylesheet">
-<link href="/static/css/main.css" rel="stylesheet">
+<link href="/web/css/bootstrap.min.css" rel="stylesheet">
+<link href="/web/css/main.css" rel="stylesheet">
 <body>
 <div id="app">
     <nav class="navbar navbar-expand navbar-dark fixed-top bg-dark">
@@ -134,7 +134,7 @@
                                 <span class="input-group-text" id="basic-addon2">IP Address</span>
                             </div>
                             <input type="text" class="form-control" placeholder="IP" aria-label="IP"
-                                   aria-describedby="basic-addon2" id="add-server-ip">
+                                   aria-describedby="basic-addon2" id="add-server-ip" :disabled="opt === 'editServer'">
                         </div>
 
                         <div class="input-group mb-3">
@@ -163,6 +163,24 @@
                                 <label class="form-check-label" for="add-server-check">Start monitor</label>
                             </div>
                         </div>
+
+                        <p class="small alert-danger" v-if="opt === 'addServer'">Information below would be used for remote install tool in server,
+                            wouldn't be stored in database.</p>
+                        <div class="input-group mb-3" v-if="opt === 'addServer'">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon8">Root username</span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="root" aria-label="root"
+                                   aria-describedby="basic-addon8" required id="username">
+                        </div>
+                        <div class="input-group mb-3" v-if="opt === 'addServer'">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon20">Root password</span>
+                            </div>
+                            <input type="password" class="form-control" placeholder="password" aria-label="password"
+                                   aria-describedby="basic-addon20" required id="password">
+                        </div>
+
                         <button class="btn btn-lg btn-primary btn-block" type="submit" v-if="opt === 'editServer'">
                             Edit
                         </button>
@@ -254,9 +272,9 @@
     </div>
 </div>
 </body>
-<script src="/static/js/jquery.min.js"></script>
-<script src="/static/js/bootstrap.min.js"></script>
-<script src="/static/js/vue.min.js"></script>
-<script src="/static/js/axios.min.js"></script>
-<script src="/static/js/main.js"></script>
+<script src="/web/js/jquery.min.js"></script>
+<script src="/web/js/bootstrap.min.js"></script>
+<script src="/web/js/vue.min.js"></script>
+<script src="/web/js/axios.min.js"></script>
+<script src="/web/js/main.js"></script>
 </html>

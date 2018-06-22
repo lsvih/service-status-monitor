@@ -13,22 +13,22 @@ vm = new Vue({
     created() {
         this.getServers()
         this.getApps()
-        axios.get("/is_login/").then(res => {
+        axios.get("/api/is_login/").then(res => {
             if (res.data.data) this.loginState = true
         })
     },
     methods: {
         getServers() {
-            axios.get("/servers/").then(res => this.serversList = res.data.data)
+            axios.get("/api/servers/").then(res => this.serversList = res.data.data)
         },
         getApps() {
-            axios.get("/apps/").then(res => this.appsList = res.data.data)
+            axios.get("/api/apps/").then(res => this.appsList = res.data.data)
         },
         appsOfServer(serverId) {
             return this.appsList.filter(e => e.server_id == serverId)
         },
         login() {
-            axios.post("/login/",
+            axios.post("/api/login/",
                 {username: $('#inputName').val(), password: $('#inputPassword').val()})
                 .then(res => {
                     if (res.data.data === 'success') {
@@ -43,29 +43,33 @@ vm = new Vue({
         },
         logout() {
             if (confirm("Confirm logout?")) {
-                axios.post("/logout/").then(res => this.loginState = false)
+                axios.post("/api/logout/").then(res => this.loginState = false)
             }
         },
         optServer() {
             if (this.opt === 'addServer') {
-                axios.post("/servers/",
+                axios.post("/api/servers/",
                     {
                         name: $('#add-server-name').val(),
                         description: $('#add-server-des').val(),
                         address: $('#add-server-ip').val(),
                         cycle: $('#add-server-cycle').val(),
-                        state: Number($('#add-server-check')[0].checked)
+                        state: Number($('#add-server-check')[0].checked),
+                        username: $('#username').val(),
+                        password: $('#password').val()
                     })
                     .then(res => {
                         $('#add-server-name').val("")
                         $('#add-server-des').val("")
                         $('#add-server-ip').val("")
                         $('#add-server-cycle').val("1")
+                        $('#username').val('')
+                        $('#password').val('')
                         this.getServers()
                         $('#add-server').modal('hide')
                     }).catch(res => alert("Add failed"))
             } else if (this.opt === 'editServer') {
-                axios.put(`/servers/`,
+                axios.put(`/api/servers/`,
                     {
                         id: this._serverId,
                         name: $('#add-server-name').val(),
@@ -90,7 +94,7 @@ vm = new Vue({
                 alert("Must delete sub-applications of this server.")
             } else {
                 if (confirm("Confirm delete this server?")) {
-                    axios.delete(`/servers/${id}`)
+                    axios.delete(`/api/servers/${id}`)
                         .then(res => {
                             this.getServers()
                         }).catch(res => alert("Delete failed"))
@@ -99,7 +103,7 @@ vm = new Vue({
         },
         deleteApp(id) {
             if (confirm("Confirm delete this app?")) {
-                axios.delete(`/apps/${id}`)
+                axios.delete(`/api/apps/${id}`)
                     .then(res => {
                         this.getApps()
                     }).catch(res => alert("Delete failed"))
@@ -132,7 +136,7 @@ vm = new Vue({
         },
         optApp() {
             if (this.opt === 'addApp') {
-                axios.post("/apps/",
+                axios.post("/api/apps/",
                     {
                         name: $('#add-app-name').val(),
                         address: `http://${$('#add-app-address').val()}`,
@@ -153,7 +157,7 @@ vm = new Vue({
                         $('#add-app').modal('hide')
                     }).catch(res => alert("Add failed"))
             } else if (this.opt === 'editApp') {
-                axios.put("/apps/",
+                axios.put("/api/apps/",
                     {
                         id: this._appId,
                         name: $('#add-app-name').val(),
