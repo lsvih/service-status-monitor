@@ -1,7 +1,9 @@
 # Service Status Monitor
-A Tiny dashboard application that could monitor servers and services' status. Written in Python3.
+A Tiny dashboard application that could monitor servers, services and GPUs' status. Written in Python3.
 
 ![Screenshot](/screenshot.png)
+
+![GPU status](/screenshot-2.png)
 
 ### Dependency
 
@@ -33,3 +35,7 @@ password=root
 ### Note
 
 There need a account 'monitor' whose password is 'monitor' and which authorized to execute `ps -e` in GPU server.
+
+### Acknowledgement
+
+GPU monitor refer to [https://github.com/congjianluo/GPU-monitor](https://github.com/congjianluo/GPU-monitor)
