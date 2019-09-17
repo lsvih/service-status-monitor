@@ -1,3 +1,5 @@
+import datetime
+import json
 import re
 import sqlite3
 import subprocess
@@ -8,7 +10,9 @@ from functools import wraps
 
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import Flask, g, request, jsonify, session, abort
+from flask import Flask, g, request, jsonify, session, abort, make_response
+
+from gpu.utils import gpu_status
 
 """
 Server status:
@@ -34,6 +38,12 @@ config['SESSION_COOKIE_PATH'] = '/'
 server_base = ['http://', 'https://'][int(config['HTTPS'])] + config['SERVER_NAME']
 cron = BackgroundScheduler()
 cron.start()
+
+update_flag = False
+machines_status = ""
+temp_machines_status = json.dumps(
+    {"data": [{"name": "System initting..."}],
+     "update_time": int(time.mktime(datetime.datetime.now().timetuple()))})
 
 
 def call_proc(cmd):
@@ -147,15 +157,16 @@ def create_server():
     address = data.get("address")
     cycle = int(data.get("cycle"))
     state = int(data.get("state"))
-    if data is not None and name is not None and address is not None and cycle is not None:
+    gpu = int(data.get("gpu"))
+    if data is not None and name is not None and address is not None and cycle is not None and gpu is not None:
         if description is None:
             description = ""
         rs = query_db(
             'insert into Servers '
-            '(name,description,address,created_at,updated_at,cycle,created_by,status,state)'
-            'values(?,?,?,?,?,?,?,?,?)',
+            '(name,description,address,created_at,updated_at,cycle,created_by,status,state,gpu)'
+            'values(?,?,?,?,?,?,?,?,?,?)',
             [name, description, address, int(time.time()), int(time.time()), cycle, session.get('logged_in')['id'], -1,
-             state],
+             state, gpu],
             mode='modify')
         updateServer(rs, address)
         return jsonify({"code": 200, 'data': rs})
@@ -173,12 +184,13 @@ def update_server():
     address = data.get("address")
     cycle = int(data.get("cycle"))
     state = int(data.get("state"))
-    if server_id is not None and data is not None and name is not None and address is not None and cycle is not None:
+    gpu = int(data.get("gpu"))
+    if server_id is not None and data is not None and name is not None and address is not None and cycle is not None and gpu is not None:
         if description is None:
             description = ""
         rs = query_db(
-            'update Servers set name=?,description=?,address=?,updated_at=?,cycle=?,state=? where id=?',
-            [name, description, address, int(time.time()), cycle, state, int(server_id)], mode='modify')
+            'update Servers set name=?,description=?,address=?,updated_at=?,cycle=?,state=?,gpu=? where id=?',
+            [name, description, address, int(time.time()), cycle, state, gpu, int(server_id)], mode='modify')
         updateServer(server_id, address)
         return jsonify({"code": 200, 'data': rs})
     else:
@@ -191,6 +203,16 @@ def delete_server(server_id):
     rs = query_db('delete from Servers where id=?',
                   [int(server_id)], one=True, mode='modify')
     return jsonify({"code": 200, 'data': rs})
+
+
+@app.route('/get_gpu_status')
+def get_result():
+    global update_flag
+    global machines_status
+    if not update_flag:
+        return make_response(machines_status)
+    else:
+        return make_response(temp_machines_status)
 
 
 @app.route('/apps/', methods=['GET'])
@@ -327,6 +349,22 @@ def updateServer(_id, host):
                      [-1, int(time.time()), _id], one=True, mode='modify')
 
 
+def updateGPUServer(servers):
+    with app.app_context():
+        before_request()
+        print("Start update!")
+        global update_flag
+        global machines_status
+        global temp_machines_status
+        temp_machines_status = machines_status
+        update_flag = True
+        status = gpu_status(list(map(lambda server: server['address'], servers)))
+        machines_status = json.dumps(
+            {"data": status, "update_time": int(time.mktime(datetime.datetime.now().timetuple()))})
+        update_flag = False
+        print("Stop update!")
+
+
 def updateApp(_id, address):
     with app.app_context():
         before_request()
@@ -342,6 +380,14 @@ def updateApp(_id, address):
                      [-1, int(time.time()), _id], one=True, mode='modify')
 
 
+@app.before_first_request
+def getGPUServerInfo():
+    before_request()
+    server_list = query_db('select * from Servers')
+    gpu_server_list = list(filter(lambda server: server['gpu'] == 1, server_list))
+    updateGPUServer(gpu_server_list)
+
+
 @cron.scheduled_job('interval', seconds=20, max_instances=30)
 def check():
     def _filter(item):
@@ -351,10 +397,13 @@ def check():
             return False
         return True
 
-    server_list = list(filter(_filter, requests.get(server_base + '/servers').json()['data']))
+    server_list = requests.get(server_base + '/servers').json()['data']
+    gpu_server_list = list(filter(lambda server: server['gpu'] == 1, server_list))
+    server_list = list(filter(_filter, server_list))
     app_list = list(filter(_filter, requests.get(server_base + '/apps').json()['data']))
     jobs = [threading.Thread(target=updateServer, args=(server['id'], server['address'])) for server in server_list] + \
-           [threading.Thread(target=updateApp, args=(app['id'], app['address'])) for app in app_list]
+           [threading.Thread(target=updateApp, args=(app['id'], app['address'])) for app in app_list] + \
+           [threading.Thread(target=updateGPUServer, args=[gpu_server_list])]
     for j in jobs:
         j.start()
     for j in jobs:

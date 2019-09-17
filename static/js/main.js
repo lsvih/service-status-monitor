@@ -6,6 +6,7 @@ vm = new Vue({
         loginState: false,
         serversList: [],
         appsList: [],
+        gpuServersList: [],
         _serverId: -1,
         _appId: -1,
         opt: ''
@@ -13,6 +14,12 @@ vm = new Vue({
     created() {
         this.getServers()
         this.getApps()
+        setTimeout(() => this.getGPUServers(), 100)
+        setInterval(() => {
+            this.getServers()
+            this.getApps()
+            this.getGPUServers()
+        }, 20000)
         axios.get("/is_login/").then(res => {
             if (res.data.data) this.loginState = true
         })
@@ -23,6 +30,10 @@ vm = new Vue({
         },
         getApps() {
             axios.get("/apps/").then(res => this.appsList = res.data.data)
+        },
+        getGPUServers() {
+            axios.get("/get_gpu_status").then(res => this.gpuServersList = res.data.data)
+            setTimeout(this.updateProgressbar,100)
         },
         appsOfServer(serverId) {
             return this.appsList.filter(e => e.server_id == serverId)
@@ -54,7 +65,8 @@ vm = new Vue({
                         description: $('#add-server-des').val(),
                         address: $('#add-server-ip').val(),
                         cycle: $('#add-server-cycle').val(),
-                        state: Number($('#add-server-check')[0].checked)
+                        state: Number($('#add-server-check')[0].checked),
+                        gpu: Number($('#add-gpu-server-check')[0].checked)
                     })
                     .then(res => {
                         $('#add-server-name').val("")
@@ -72,7 +84,8 @@ vm = new Vue({
                         description: $('#add-server-des').val(),
                         address: $('#add-server-ip').val(),
                         cycle: $('#add-server-cycle').val(),
-                        state: Number($('#add-server-check')[0].checked)
+                        state: Number($('#add-server-check')[0].checked),
+                        gpu: Number($('#add-gpu-server-check')[0].checked)
                     })
                     .then(res => {
                         $('#add-server-name').val("")
@@ -185,6 +198,7 @@ vm = new Vue({
             $('#add-server-ip').val(server.address)
             $('#add-server-cycle').val(server.cycle)
             $('#add-server-check')[0].checked = server.state === 1
+            $('#add-gpu-server-check')[0].checked = server.gpu === 1
             this._serverId = server_id
         },
         openAddServerPanel() {
@@ -195,6 +209,29 @@ vm = new Vue({
             $('#add-server-ip').val("")
             $('#add-server-cycle').val(1)
             $('#add-server-check')[0].checked = false
+            $('#add-gpu-server-check')[0].checked = false
         },
+        memoryStringToNumber(memoryStr){
+            return memoryStr.match(/\d+/g)
+        },
+        updateProgressbar(){
+            $(".circle-progress").each(function () {
+                let value = $(this).attr('data-value');
+                let left = $(this).find('.progress-left .progress-bar');
+                let right = $(this).find('.progress-right .progress-bar');
+                if (value > 0) {
+                    if (value <= 50) {
+                        right.css('transform', 'rotate(' + percentageToDegrees(value) + 'deg)')
+                    } else {
+                        right.css('transform', 'rotate(180deg)')
+                        left.css('transform', 'rotate(' + percentageToDegrees(value - 50) + 'deg)')
+                    }
+                }
+            })
+
+            function percentageToDegrees(percentage) {
+                return percentage / 100 * 360
+            }
+        }
     }
 })

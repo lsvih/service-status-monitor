@@ -28,3 +28,8 @@ Default administrator's username and password:
 username=root
 password=root
 ```
+
+
+### Note
+
+There need a account 'monitor' whose password is 'monitor' and which authorized to execute `ps -e` in GPU server.

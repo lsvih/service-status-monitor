@@ -11,8 +11,11 @@
         <a class="navbar-brand" href="#">Monitor</a>
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item active">
-                    <a class="nav-link" href="#">Dashboard</a>
+                <li class="nav-item" :class="{active: page === 'dashboard'}">
+                    <a class="nav-link" href="#" @click="page = 'dashboard'">Dashboard</a>
+                </li>
+                <li class="nav-item" :class="{active: page === 'gpu'}">
+                    <a class="nav-link" href="#" @click="page = 'gpu'">GPU</a>
                 </li>
                 <li class="nav-item" v-if="!loginState">
                     <a class="nav-link" href="#" data-toggle="modal" data-target="#login">Login</a>
@@ -33,7 +36,7 @@
                 <span class="server-status"
                       v-bind:style="{backgroundColor:['grey', 'red', 'green'][server.status + 1]}"></span>
                 <a class="card-link" data-toggle="collapse" v-bind:href="`#${server.id}`">
-                    {{['Unknown', 'Offline', 'Run'][server.status + 1]}} - {{server.name}}
+                    {{ ['Unknown', 'Offline', 'Run'][server.status + 1] }} - {{ server.name }}
                 </a>
                 <div class="btn-group btn-group-sm float-right" role="group" aria-label="panel">
                     <button type="button" class="btn btn-secondary btn-sm float-right" v-if="loginState"
@@ -63,11 +66,11 @@
                         <tbody>
                         <tr v-for="app of appsOfServer(server.id)">
                             <td v-bind:class="['table-secondary','table-danger','table-success'][app.status + 1]">
-                                {{['Unknown', 'Offline', 'Run'][app.status + 1]}}
+                                {{ ['Unknown', 'Offline', 'Run'][app.status + 1] }}
                             </td>
-                            <td>{{app.name}}</td>
-                            <td><a v-bind:href="app.address" target="_blank">{{app.address}}</a></td>
-                            <td><code>{{app.project_path}}</code></td>
+                            <td>{{ app.name }}</td>
+                            <td><a v-bind:href="app.address" target="_blank">{{ app.address }}</a></td>
+                            <td><code>{{ app.project_path }}</code></td>
                             <td>
                                 <div class="btn-group btn-group-sm" role="group" aria-label="panel">
                                     <button type="button" class="btn btn-secondary btn-sm float-right"
@@ -86,6 +89,57 @@
             </div>
         </div>
     </main>
+
+    <main role="main" class="container" v-show="page == 'gpu'">
+        <div class="card" v-for="server of gpuServersList">
+            <div class="card-header">
+                <span class="server-status"
+                      v-bind:style="{backgroundColor: 'green'}"></span>
+                <a class="card-link" data-toggle="collapse" v-bind:href="`#${server.id}`">
+                    Run - {{ server.name }}
+                </a>
+            </div>
+            <div class="card-body">
+                <div v-for="gpu in server.gpu_infos">
+                    <div class="gpu">
+                        <div class="meta-info">
+                                <span class="progress circle-progress"
+                                      v-bind:data-value="gpu['gpu_util'].replace('%','')">
+                                  <span class="progress-left">
+                                      <span class="progress-bar border-primary"></span>
+                                  </span>
+                                    <span class="progress-right">
+                                        <span class="progress-bar border-primary"></span>
+                                  </span>
+                                    <div class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center">
+                                        <div class="h2 font-weight-bold">{{ gpu['gpu_util'].replace('%','') }}<sup
+                                                class="small">%</sup></div>
+                                    </div>
+                                </span>
+                            <h5 class="card-title">GPU - #{{ gpu['index'] }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Temperature: {{ gpu['gpu_temp'] }}℃</h6>
+                            <p class="card-text" style="font-size: 15px">Used/Total
+                                Memory: {{ gpu['mem_used'] }}/{{ gpu['mem_total'] }}</p>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" role="progressbar" aria-valuemin="0"
+                                     aria-valuemax="100"
+                                     :style="{width: (memoryStringToNumber(gpu['mem_used'])/memoryStringToNumber(gpu['mem_total'])).toFixed(4)  * 100 + '%' }">
+                                    {{ (memoryStringToNumber(gpu['mem_used'])/memoryStringToNumber(gpu['mem_total'])).toFixed(4)  * 100 }}%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="clearfix" v-for="(proc,i) in server['status'][gpu['index']]['proc']"
+                             style="font-size: 12px;">
+                            Process - {{ i }}: <b>{{ proc['user'] }}</b> - {{ proc['mem'] }} MB <br>
+                            <code>{{ proc['command'] }}</code>
+                        </div>
+                    </div>
+                    <hr/>
+                </div>
+            </div>
+        </div>
+    </main>
+
     <div id="login" tabindex="-1" role="dialog" class="modal fade">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -161,6 +215,10 @@
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input" id="add-server-check">
                                 <label class="form-check-label" for="add-server-check">Start monitor</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="add-gpu-server-check">
+                                <label class="form-check-label" for="add-gpu-server-check">GPU</label>
                             </div>
                         </div>
                         <button class="btn btn-lg btn-primary btn-block" type="submit" v-if="opt === 'editServer'">
