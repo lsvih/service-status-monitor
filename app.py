@@ -205,10 +205,11 @@ def get_result():
     global machines_status
     rs = []
     for id in sorted(machines_status.keys()):
-        rs.append(machines_status[id]['data'][0])
+        try:
+            rs.append(machines_status[id]['data'][0])
+        except:
+            pass
     return jsonify({"code": 200, 'data': rs})
-    # else:
-    #     return make_response(temp_machines_status)
 
 
 @app.route('/apps/', methods=['GET'])
