@@ -12,6 +12,10 @@ vm = new Vue({
         opt: ''
     },
     created() {
+        if (window.location.hash === "#dashboard")
+            this.page = 'dashboard'
+        else if (window.location.hash === "#gpu")
+            this.page = 'gpu'
         this.getServers()
         this.getApps()
         setTimeout(() => this.getGPUServers(), 100)
@@ -33,7 +37,7 @@ vm = new Vue({
         },
         getGPUServers() {
             axios.get("/get_gpu_status").then(res => this.gpuServersList = res.data.data)
-            setTimeout(this.updateProgressbar,100)
+            setTimeout(this.updateProgressbar, 100)
         },
         appsOfServer(serverId) {
             return this.appsList.filter(e => e.server_id == serverId)
@@ -211,10 +215,10 @@ vm = new Vue({
             $('#add-server-check')[0].checked = false
             $('#add-gpu-server-check')[0].checked = false
         },
-        memoryStringToNumber(memoryStr){
+        memoryStringToNumber(memoryStr) {
             return memoryStr.match(/\d+/g)
         },
-        updateProgressbar(){
+        updateProgressbar() {
             $(".circle-progress").each(function () {
                 let value = $(this).attr('data-value');
                 let left = $(this).find('.progress-left .progress-bar');

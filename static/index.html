@@ -12,10 +12,10 @@
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item" :class="{active: page === 'dashboard'}">
-                    <a class="nav-link" href="#" @click="page = 'dashboard'">Dashboard</a>
+                    <a class="nav-link" href="#dashboard" @click="page = 'dashboard'">Dashboard</a>
                 </li>
                 <li class="nav-item" :class="{active: page === 'gpu'}">
-                    <a class="nav-link" href="#" @click="page = 'gpu'">GPU</a>
+                    <a class="nav-link" href="#gpu" @click="page = 'gpu'">GPU</a>
                 </li>
                 <li class="nav-item" v-if="!loginState">
                     <a class="nav-link" href="#" data-toggle="modal" data-target="#login">Login</a>
