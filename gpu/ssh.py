@@ -74,11 +74,16 @@ def get_server_status(hostname, port, username, password):
     # 获取gpu使用率
     print("Gpu -usage:")
     CMD1 = 'nvidia-smi| grep MiB | grep -v Default | cut -c 4-8'
-    CMD2 = 'nvidia-smi -L | wc -l'
+    CMD2 = 'nvidia-smi -L'
     CMD3 = 'nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits'
 
     stdin, stdout, stderr = ssh.exec_command(CMD2)
-    total_gpu = int(stdout.read())
+    gpu_info = stdout.read()
+    if isinstance(gpu_info, bytes):
+        gpu_info = gpu_info.decode()
+    gpu_info.strip().split('\n')
+
+    total_gpu = len(gpu_info)
 
     # first choose the free gpus
     stdin, stdout, stderr = ssh.exec_command(CMD1)
@@ -120,7 +125,7 @@ def get_gpu_utils(hostname, port, username, password):
 
     # 获取gpu使用率
     gpu_info_cmd = "nvidia-smi " \
-                   "--query-gpu=index,memory.total,memory.used,memory.free,utilization.gpu,temperature.gpu " \
+                   "--query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu,temperature.gpu " \
                    "--format=csv,noheader"
 
     stdin, stdout, stderr = ssh.exec_command(gpu_info_cmd)
@@ -130,11 +135,12 @@ def get_gpu_utils(hostname, port, username, password):
     gpu_infos = out.strip().split('\n')
     gpu_infos = map(lambda x: x.split(', '), gpu_infos)
     gpu_infos = [{'index': x[0],
-                  'mem_total': x[1],
-                  'mem_used': x[2],
-                  'mem_free': x[3],
-                  'gpu_util': x[4],
-                  'gpu_temp': x[5],
+                  'name': x[1],
+                  'mem_total': x[2],
+                  'mem_used': x[3],
+                  'mem_free': x[4],
+                  'gpu_util': x[5],
+                  'gpu_temp': x[6],
                   }
                  for x in gpu_infos]
 

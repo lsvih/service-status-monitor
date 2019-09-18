@@ -116,7 +116,7 @@
                                                 class="small">%</sup></div>
                                     </div>
                                 </span>
-                            <h5 class="card-title">GPU - #{{ gpu['index'] }}</h5>
+                            <h5 class="card-title">GPU #{{ gpu['index'] }}, <b>{{ gpu['name'] }}</b></h5>
                             <h6 class="card-subtitle mb-2 text-muted">Temperature: {{ gpu['gpu_temp'] }}℃</h6>
                             <p class="card-text" style="font-size: 15px">Used/Total
                                 Memory: {{ gpu['mem_used'] }}/{{ gpu['mem_total'] }}</p>
