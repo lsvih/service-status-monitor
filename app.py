@@ -1,5 +1,4 @@
 import datetime
-import json
 import re
 import sqlite3
 import subprocess
@@ -10,7 +9,7 @@ from functools import wraps
 
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import Flask, g, request, jsonify, session, abort, make_response
+from flask import Flask, g, request, jsonify, session, abort
 
 from gpu.utils import gpu_status
 
@@ -39,11 +38,7 @@ server_base = ['http://', 'https://'][int(config['HTTPS'])] + config['SERVER_NAM
 cron = BackgroundScheduler()
 cron.start()
 
-update_flag = False
-machines_status = ""
-temp_machines_status = json.dumps(
-    {"data": [{"name": "System initting..."}],
-     "update_time": int(time.mktime(datetime.datetime.now().timetuple()))})
+machines_status = {}
 
 
 def call_proc(cmd):
@@ -207,12 +202,13 @@ def delete_server(server_id):
 
 @app.route('/get_gpu_status')
 def get_result():
-    global update_flag
     global machines_status
-    if not update_flag:
-        return make_response(machines_status)
-    else:
-        return make_response(temp_machines_status)
+    rs = []
+    for id in sorted(machines_status.keys()):
+        rs.append(machines_status[id]['data'][0])
+    return jsonify({"code": 200, 'data': rs})
+    # else:
+    #     return make_response(temp_machines_status)
 
 
 @app.route('/apps/', methods=['GET'])
@@ -325,9 +321,9 @@ def http(address):
     requests.models.PreparedRequest().prepare_url(url=address, params=None)
     req = None
     try:
-        req = requests.get(address)
+        req = requests.get(address, timeout=20)
     except:
-        pass
+        raise TimeoutError('timeout')
     if req:
         return req.ok
     else:
@@ -349,20 +345,14 @@ def updateServer(_id, host):
                      [-1, int(time.time()), _id], one=True, mode='modify')
 
 
-def updateGPUServer(servers):
+def updateGPUServer(_id, address):
     with app.app_context():
         before_request()
-        print("Start update!")
-        global update_flag
         global machines_status
-        global temp_machines_status
-        temp_machines_status = machines_status
-        update_flag = True
-        status = gpu_status(list(map(lambda server: server['address'], servers)))
-        machines_status = json.dumps(
-            {"data": status, "update_time": int(time.mktime(datetime.datetime.now().timetuple()))})
-        update_flag = False
-        print("Stop update!")
+        # global temp_machines_status
+        # temp_machines_status = machines_status
+        status = gpu_status([address])
+        machines_status[_id] = {"data": status, "update_time": int(time.mktime(datetime.datetime.now().timetuple()))}
 
 
 def updateApp(_id, address):
@@ -385,7 +375,12 @@ def getGPUServerInfo():
     before_request()
     server_list = query_db('select * from Servers')
     gpu_server_list = list(filter(lambda server: server['gpu'] == 1, server_list))
-    updateGPUServer(gpu_server_list)
+    jobs = [threading.Thread(target=updateGPUServer, args=(gpu_server['id'], gpu_server['address'])) for gpu_server in
+            gpu_server_list]
+    for j in jobs:
+        j.start()
+    for j in jobs:
+        j.join()
 
 
 @cron.scheduled_job('interval', seconds=60, max_instances=59)
@@ -403,7 +398,8 @@ def check():
     app_list = list(filter(_filter, requests.get(server_base + '/apps').json()['data']))
     jobs = [threading.Thread(target=updateServer, args=(server['id'], server['address'])) for server in server_list] + \
            [threading.Thread(target=updateApp, args=(app['id'], app['address'])) for app in app_list] + \
-           [threading.Thread(target=updateGPUServer, args=[gpu_server_list])]
+           [threading.Thread(target=updateGPUServer, args=(gpu_server['id'], gpu_server['address'])) for gpu_server in
+            gpu_server_list]
     for j in jobs:
         j.start()
     for j in jobs:
