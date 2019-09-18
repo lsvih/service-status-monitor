@@ -388,7 +388,7 @@ def getGPUServerInfo():
     updateGPUServer(gpu_server_list)
 
 
-@cron.scheduled_job('interval', seconds=40, max_instances=30)
+@cron.scheduled_job('interval', seconds=60, max_instances=59)
 def check():
     def _filter(item):
         if item['state'] == 0:
