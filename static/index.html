@@ -124,7 +124,7 @@
                                 <div class="progress-bar bg-success" role="progressbar" aria-valuemin="0"
                                      aria-valuemax="100"
                                      :style="{width: (memoryStringToNumber(gpu['mem_used'])/memoryStringToNumber(gpu['mem_total']) * 100).toFixed(4) + '%' }">
-                                    {{ (memoryStringToNumber(gpu['mem_used'])/memoryStringToNumber(gpu['mem_total']) * 100).toFixed(4)}}%
+                                    {{ (memoryStringToNumber(gpu['mem_used'])/memoryStringToNumber(gpu['mem_total']) * 100).toFixed(2)}}%
                                 </div>
                             </div>
                         </div>
