@@ -407,5 +407,5 @@ def check():
         j.join()
 
 
-app.run()
-exit()
+if __name__ == '__main__':
+    app.run()
