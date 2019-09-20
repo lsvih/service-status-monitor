@@ -19,8 +19,10 @@ A Tiny dashboard application that could monitor servers, services and GPUs' stat
 
 ```bash
 pip3 install -r requirements.txt
-python3 app.py
+gunicorn -w 4 -b 127.0.0.1:5006 app:app
 ```
+
+>  `python3 app.py` for development mode.
 
 Then visit [127.0.0.1:5006](127.0.0.1:5006).
 
