@@ -178,7 +178,7 @@ def get_gpu_utils(hostname, port, username, password):
             gpu_procs.append(tmp)
         gpu_stat['proc'] = gpu_procs
         status[index] = gpu_stat
-    print(out)
+    ssh.close()
     return gpu_infos, status
 
 
