@@ -91,6 +91,13 @@
     </main>
 
     <main role="main" class="container" v-show="page == 'gpu'">
+        <div class="card">
+            <div class="card-header">
+                    Summary
+            </div>
+            <v-chart :options="polar" style='margin: 0 auto'/>
+        </div>
+
         <div class="card" v-for="server of gpuServersList">
             <div class="card-header">
                 <span class="server-status"
@@ -316,5 +323,7 @@
 <script src="/static/js/bootstrap.min.js"></script>
 <script src="/static/js/vue.min.js"></script>
 <script src="/static/js/axios.min.js"></script>
+<script src="/static/js/echarts.js"></script>
+<script src="/static/js/vue-echarts.min.js"></script>
 <script src="/static/js/main.js"></script>
 </html>

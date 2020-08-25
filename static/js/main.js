@@ -1,20 +1,90 @@
 axios.defaults.withCredentials = true
+
+Vue.component('v-chart', VueECharts)
+
 vm = new Vue({
-    el: "#app",
-    data: {
-        page: 'dashboard', // dashboard | server_manage | application_manage | login | logout
-        loginState: false,
-        serversList: [],
-        appsList: [],
-        gpuServersList: [],
-        _serverId: -1,
-        _appId: -1,
-        opt: ''
+    el: '#app',
+    data() {
+        return {
+            page: 'dashboard', // dashboard | server_manage | application_manage | login | logout
+            loginState: false,
+            serversList: [],
+            appsList: [],
+            gpuServersList: [],
+            _serverId: -1,
+            _appId: -1,
+            opt: ''
+        }
+    },
+    computed: {
+        polar: function () {
+            let gpu_count = 0
+            let no_use = 0
+            let user_list = []
+            for (let gpu_server of this.gpuServersList) {
+                for (let gpu_id of Object.keys(gpu_server.status)) {
+                    let gpu = gpu_server.status[gpu_id]
+                    gpu_count += 1
+                    if (gpu.proc.length === 0)
+                        no_use += 1
+                    if (gpu.proc.length === 1) {
+                        if (user_list.map(e => e.name).includes(gpu.proc[0].user)) {
+                            for (let user of user_list)
+                                if (user.name === gpu.proc[0].user)
+                                    user.value += 1
+                        } else
+                            user_list.push({name: gpu.proc[0].user, value: 1})
+                    }
+                    if (gpu.proc.length > 1) {
+                        for (let proc of gpu.proc) {
+                            if (user_list.map(e => e.name).includes(proc.user)) {
+                                for (let user of user_list)
+                                    if (user.name === proc.user)
+                                        user.value += proc.mem / gpu.mem_used
+                            } else
+                                user_list.push({name: proc.user, value: proc.mem / gpu.mem_used})
+                        }
+                    }
+                }
+            }
+            return {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b} <br/> Number: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: 10,
+                    data: user_list.map(e=>e.name)
+                },
+                series: [
+                    {
+                        name: 'GPU Usage Stat',
+                        type: 'pie',
+                        radius: ['50%', '70%'],
+                        avoidLabelOverlap: false,
+                        label: {
+                            position: 'outer',
+                            alignTo: 'none',
+                            bleedMargin: 5
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: '22',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        data: [...user_list, {name: 'free', value: no_use, itemStyle: {color: 'white'}}]
+                    }
+                ]
+            }
+        }
     },
     created() {
-        if (window.location.hash === "#dashboard")
+        if (window.location.hash === '#dashboard')
             this.page = 'dashboard'
-        else if (window.location.hash === "#gpu")
+        else if (window.location.hash === '#gpu')
             this.page = 'gpu'
         this.getServers()
         this.getApps()
@@ -24,46 +94,46 @@ vm = new Vue({
             this.getApps()
             this.getGPUServers()
         }, 20000)
-        axios.get("/is_login/").then(res => {
+        axios.get('/is_login/').then(res => {
             if (res.data.data) this.loginState = true
         })
     },
     methods: {
         getServers() {
-            axios.get("/servers/").then(res => this.serversList = res.data.data)
+            axios.get('/servers/').then(res => this.serversList = res.data.data)
         },
         getApps() {
-            axios.get("/apps/").then(res => this.appsList = res.data.data)
+            axios.get('/apps/').then(res => this.appsList = res.data.data)
         },
         getGPUServers() {
-            axios.get("/get_gpu_status").then(res => this.gpuServersList = res.data.data)
+            axios.get('/get_gpu_status').then(res => this.gpuServersList = res.data.data)
             setTimeout(this.updateProgressbar, 100)
         },
         appsOfServer(serverId) {
             return this.appsList.filter(e => e.server_id == serverId)
         },
         login() {
-            axios.post("/login/",
+            axios.post('/login/',
                 {username: $('#inputName').val(), password: $('#inputPassword').val()})
                 .then(res => {
                     if (res.data.data === 'success') {
                         this.loginState = true
                         $('#inputName').val('')
                         $('#inputPassword').val('')
-                        $('#login').modal("hide")
+                        $('#login').modal('hide')
                     } else
-                        alert("Login failed")
-                }).catch(res => alert("Login failed"))
-            return false;
+                        alert('Login failed')
+                }).catch(res => alert('Login failed'))
+            return false
         },
         logout() {
-            if (confirm("Confirm logout?")) {
-                axios.post("/logout/").then(res => this.loginState = false)
+            if (confirm('Confirm logout?')) {
+                axios.post('/logout/').then(res => this.loginState = false)
             }
         },
         optServer() {
             if (this.opt === 'addServer') {
-                axios.post("/servers/",
+                axios.post('/servers/',
                     {
                         name: $('#add-server-name').val(),
                         description: $('#add-server-des').val(),
@@ -73,13 +143,13 @@ vm = new Vue({
                         gpu: Number($('#add-gpu-server-check')[0].checked)
                     })
                     .then(res => {
-                        $('#add-server-name').val("")
-                        $('#add-server-des').val("")
-                        $('#add-server-ip').val("")
-                        $('#add-server-cycle').val("1")
+                        $('#add-server-name').val('')
+                        $('#add-server-des').val('')
+                        $('#add-server-ip').val('')
+                        $('#add-server-cycle').val('1')
                         this.getServers()
                         $('#add-server').modal('hide')
-                    }).catch(res => alert("Add failed"))
+                    }).catch(res => alert('Add failed'))
             } else if (this.opt === 'editServer') {
                 axios.put(`/servers/`,
                     {
@@ -92,34 +162,34 @@ vm = new Vue({
                         gpu: Number($('#add-gpu-server-check')[0].checked)
                     })
                     .then(res => {
-                        $('#add-server-name').val("")
-                        $('#add-server-des').val("")
-                        $('#add-server-ip').val("")
-                        $('#add-server-cycle').val("1")
+                        $('#add-server-name').val('')
+                        $('#add-server-des').val('')
+                        $('#add-server-ip').val('')
+                        $('#add-server-cycle').val('1')
                         this.getServers()
                         $('#add-server').modal('hide')
-                    }).catch(res => alert("Edit failed"))
+                    }).catch(res => alert('Edit failed'))
             }
-            return false;
+            return false
         },
         deleteServer(id) {
             if (this.appsOfServer(id).length > 0) {
-                alert("Must delete sub-applications of this server.")
+                alert('Must delete sub-applications of this server.')
             } else {
-                if (confirm("Confirm delete this server?")) {
+                if (confirm('Confirm delete this server?')) {
                     axios.delete(`/servers/${id}`)
                         .then(res => {
                             this.getServers()
-                        }).catch(res => alert("Delete failed"))
+                        }).catch(res => alert('Delete failed'))
                 }
             }
         },
         deleteApp(id) {
-            if (confirm("Confirm delete this app?")) {
+            if (confirm('Confirm delete this app?')) {
                 axios.delete(`/apps/${id}`)
                     .then(res => {
                         this.getApps()
-                    }).catch(res => alert("Delete failed"))
+                    }).catch(res => alert('Delete failed'))
             }
         },
         openAddAppPanel(server_id) {
@@ -149,7 +219,7 @@ vm = new Vue({
         },
         optApp() {
             if (this.opt === 'addApp') {
-                axios.post("/apps/",
+                axios.post('/apps/',
                     {
                         name: $('#add-app-name').val(),
                         address: `http://${$('#add-app-address').val()}`,
@@ -160,17 +230,17 @@ vm = new Vue({
                         state: Number($('#add-app-check')[0].checked)
                     })
                     .then(res => {
-                        $('#add-app-name').val("")
-                        $('#add-app-des').val("")
-                        $('#add-app-address').val("")
-                        $('#add-app-path').val("")
-                        $('#add-app-cycle').val("1")
+                        $('#add-app-name').val('')
+                        $('#add-app-des').val('')
+                        $('#add-app-address').val('')
+                        $('#add-app-path').val('')
+                        $('#add-app-cycle').val('1')
                         this.getApps()
                         this._serverId = -1
                         $('#add-app').modal('hide')
-                    }).catch(res => alert("Add failed"))
+                    }).catch(res => alert('Add failed'))
             } else if (this.opt === 'editApp') {
-                axios.put("/apps/",
+                axios.put('/apps/',
                     {
                         id: this._appId,
                         name: $('#add-app-name').val(),
@@ -181,17 +251,17 @@ vm = new Vue({
                         state: Number($('#add-app-check')[0].checked)
                     })
                     .then(res => {
-                        $('#add-app-name').val("")
-                        $('#add-app-des').val("")
-                        $('#add-app-address').val("")
-                        $('#add-app-path').val("")
-                        $('#add-app-cycle').val("1")
+                        $('#add-app-name').val('')
+                        $('#add-app-des').val('')
+                        $('#add-app-address').val('')
+                        $('#add-app-path').val('')
+                        $('#add-app-cycle').val('1')
                         this.getApps()
                         this._appId = -1
                         $('#add-app').modal('hide')
-                    }).catch(res => alert("Edit failed"))
+                    }).catch(res => alert('Edit failed'))
             }
-            return false;
+            return false
         },
         openEditServerPanel(server_id) {
             this.opt = 'editServer'
@@ -208,9 +278,9 @@ vm = new Vue({
         openAddServerPanel() {
             this.opt = 'addServer'
             $('#add-server').modal('show')
-            $('#add-server-name').val("")
-            $('#add-server-des').val("")
-            $('#add-server-ip').val("")
+            $('#add-server-name').val('')
+            $('#add-server-des').val('')
+            $('#add-server-ip').val('')
             $('#add-server-cycle').val(1)
             $('#add-server-check')[0].checked = false
             $('#add-gpu-server-check')[0].checked = false
@@ -219,10 +289,10 @@ vm = new Vue({
             return memoryStr.match(/\d+/g)
         },
         updateProgressbar() {
-            $(".circle-progress").each(function () {
-                let value = $(this).attr('data-value');
-                let left = $(this).find('.progress-left .progress-bar');
-                let right = $(this).find('.progress-right .progress-bar');
+            $('.circle-progress').each(function () {
+                let value = $(this).attr('data-value')
+                let left = $(this).find('.progress-left .progress-bar')
+                let right = $(this).find('.progress-right .progress-bar')
                 if (value > 0) {
                     if (value <= 50) {
                         right.css('transform', 'rotate(' + percentageToDegrees(value) + 'deg)')
