@@ -5,6 +5,8 @@ A Tiny dashboard application that could monitor servers, services and GPUs' stat
 
 ![GPU status](/screenshot-2.png)
 
+![Real-time GPU Usage Statistics](/screenshot-3.png)
+
 ### Dependency
 
 - Python3
