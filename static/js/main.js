@@ -320,7 +320,7 @@ vm = new Vue({
         toAnchor(name) {
             window.location.hash = '#' + name
             let selector = this.$el.querySelector(('#anchor-' + name).replace(/\./g, '-'))
-            document.body.scrollTop = selector.offsetTop
+            selector.scrollIntoView()
         }
     }
 })
