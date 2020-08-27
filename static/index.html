@@ -93,9 +93,9 @@
     <main role="main" class="container" v-show="page == 'gpu'">
         <div class="card">
             <div class="card-header">
-                    Summary
+                Summary
             </div>
-            <v-chart :options="polar" style='margin: 0 auto'/>
+            <v-chart :options="polar" style='margin: 0 auto; width: 800px; height: 400px'/>
         </div>
 
         <div class="card" v-for="server of gpuServersList">
@@ -131,7 +131,7 @@
                                 <div class="progress-bar bg-success" role="progressbar" aria-valuemin="0"
                                      aria-valuemax="100"
                                      :style="{width: (memoryStringToNumber(gpu['mem_used'])/memoryStringToNumber(gpu['mem_total']) * 100).toFixed(4) + '%' }">
-                                    {{ (memoryStringToNumber(gpu['mem_used'])/memoryStringToNumber(gpu['mem_total']) * 100).toFixed(2)}}%
+                                    {{ (memoryStringToNumber(gpu['mem_used'])/memoryStringToNumber(gpu['mem_total']) * 100).toFixed(2) }}%
                                 </div>
                             </div>
                         </div>
