@@ -114,7 +114,8 @@ vm = new Vue({
             axios.get('/get_gpu_status').then(res => {
                 this.gpuServersList = res.data.data
                 setTimeout(() => {
-                    this.toAnchor(scroll_to)
+                    if(scroll_to)
+                        this.toAnchor(scroll_to)
                     this.updateProgressbar()
                 }, 100)
             })
