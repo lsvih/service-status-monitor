@@ -55,7 +55,7 @@ vm = new Vue({
                 legend: {
                     orient: 'vertical',
                     right: 10,
-                    data: user_list.map(e=>e.name)
+                    data: user_list.map(e => e.name)
                 },
                 series: [
                     {
@@ -82,13 +82,18 @@ vm = new Vue({
         }
     },
     created() {
+        let scroll_to = ''
         if (window.location.hash === '#dashboard')
             this.page = 'dashboard'
         else if (window.location.hash === '#gpu')
             this.page = 'gpu'
+        else {
+            this.page = 'gpu'
+            scroll_to = window.location.hash.replace('#', '')
+        }
         this.getServers()
         this.getApps()
-        setTimeout(() => this.getGPUServers(), 100)
+        setTimeout(() => this.getGPUServers(scroll_to), 100)
         setInterval(() => {
             this.getServers()
             this.getApps()
@@ -105,9 +110,14 @@ vm = new Vue({
         getApps() {
             axios.get('/apps/').then(res => this.appsList = res.data.data)
         },
-        getGPUServers() {
-            axios.get('/get_gpu_status').then(res => this.gpuServersList = res.data.data)
-            setTimeout(this.updateProgressbar, 100)
+        getGPUServers(scroll_to) {
+            axios.get('/get_gpu_status').then(res => {
+                this.gpuServersList = res.data.data
+                setTimeout(() => {
+                    this.toAnchor(scroll_to)
+                    this.updateProgressbar()
+                }, 100)
+            })
         },
         appsOfServer(serverId) {
             return this.appsList.filter(e => e.server_id == serverId)
@@ -306,6 +316,11 @@ vm = new Vue({
             function percentageToDegrees(percentage) {
                 return percentage / 100 * 360
             }
+        },
+        toAnchor(name) {
+            window.location.hash = '#' + name
+            let selector = this.$el.querySelector(('#anchor-' + name).replace(/\./g, '-'))
+            document.body.scrollTop = selector.offsetTop
         }
     }
 })
