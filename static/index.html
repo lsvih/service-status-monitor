@@ -91,6 +91,10 @@
     </main>
 
     <main role="main" class="container" v-show="page == 'gpu'">
+        <ul class="list-group toc" v-show="gpuServersList.length !== 0">
+            <li class="list-group-item">GPU server list</li>
+            <li class="list-group-item" v-for="server of gpuServersList"><a :href="'#' + server.name">{{ server.name }}</a></li>
+        </ul>
         <div class="card">
             <div class="card-header">
                 Summary
@@ -99,7 +103,7 @@
         </div>
 
         <div class="card" v-for="server of gpuServersList">
-            <div class="card-header">
+            <div class="card-header" :id="server.name">
                 <span class="server-status"
                       v-bind:style="{backgroundColor: 'green'}"></span>
                 <a class="card-link" data-toggle="collapse" v-bind:href="`#${server.id}`">

@@ -179,3 +179,16 @@ body {
     top: 0;
     left: 0;
 }
+
+.toc{
+    position: fixed;
+    left: 0;
+    top: 20%;
+    max-width: 180px;
+    z-index: 99;
+    font-size: 12px
+}
+
+.toc .list-group-item{
+    padding: 5px!important;
+}
