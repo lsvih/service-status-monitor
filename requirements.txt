@@ -1,5 +1,5 @@
 requests
 apscheduler==3.7.0
-Flask==2.0.1
+Flask==2.2.5
 paramiko
 Werkzeug==2.2.2
