@@ -21,7 +21,7 @@ A Tiny dashboard application that could monitor servers, services and GPUs' stat
 
 ```bash
 pip3 install -r requirements.txt
-gunicorn -w 4 -b 127.0.0.1:5006 app:app
+gunicorn -w 4 -b 0.0.0.0:5006 app:app
 ```
 
 >  `python3 app.py` for development mode.

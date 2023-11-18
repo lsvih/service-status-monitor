@@ -1,4 +1,5 @@
 requests
-apscheduler
-flask
+apscheduler==3.7.0
+Flask==2.0.1
 paramiko
+Werkzeug==2.2.2
